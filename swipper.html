@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>swipper</title>
+    <style>
+        .swipper {
+            width: 700px;
+            height: 400px;
+            background: #efefef;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .wrapper {
+            position: relative;
+            left: 0;
+            display: flex;
+            width: 9999999%;
+            transition: all .3s ease;
+        }
+
+        .slider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="swipper swipper1">
+    <div class="wrapper">
+        <div class="slider">1</div>
+        <div class="slider">2</div>
+        <div class="slider">3</div>
+        <div class="slider">4</div>
+        <div class="slider">5</div>
+    </div>
+</div>
+
+<div class="swipper swipper2">
+    <div class="wrapper">
+        <div class="slider">1</div>
+        <div class="slider">2</div>
+        <div class="slider">3</div>
+        <div class="slider">4</div>
+        <div class="slider">5</div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        let Swipper = function ({el, delay}) {
+            this._el = el;
+            this._width = el.offsetWidth;
+            this._height = el.offsetHeight;
+            this._slider = el.querySelectorAll(".slider");
+            this._size = this._slider.length;
+            this._index = 0;
+            this._timer = null;
+            this._delay = delay || 3000;
+
+            this.init();
+        };
+
+        Swipper.prototype.init = function () {
+            this.setStyle();
+            this.auto();
+            this.mouseEnter();
+        };
+
+        Swipper.prototype.setStyle = function () {
+            this._slider.forEach(item => {
+                item.style.width = this._width + "px";
+                item.style.height = this._height + "px";
+            });
+        };
+
+        Swipper.prototype.next = function () {
+            this._index++;
+
+            if (this._index >= this._size) this._index = 0;
+
+            this.move();
+        };
+
+        Swipper.prototype.move = function () {
+            this._el.querySelector(".wrapper").style.left = -this._index * this._width + "px";
+            this.auto();
+        }
+
+        Swipper.prototype.auto = function () {
+            if (this._timer) clearTimeout(this._timer);
+            this._timer = setTimeout(() => {
+                this.next();
+            }, this._delay)
+        };
+
+        Swipper.prototype.mouseEnter = function () {
+            this._el.onmouseenter = () => {
+                clearTimeout(this._timer);
+            };
+
+            this._el.onmouseout = () => {
+                this.auto();
+            };
+        };
+
+        new Swipper({
+            el: document.querySelector(".swipper1"),
+            delay: 5000
+        });
+
+        new Swipper({
+            el: document.querySelector(".swipper2"),
+        });
+    })();
+</script>
+<script>
+    // 闭包：
+    // 作用：防止变量污染
+
+    (() => {
+        // a 方法  ---  a 就是一个闭包
+        const a = (() => {
+            const name = "小明";
+            const age = "18";
+
+            const getName = () => name;
+            const getAge = () => age;
+
+            return {getName, getAge};
+        })();
+
+        // b 方法
+        const b = () => {
+            console.log(a.getName());
+        };
+
+        b();
+    })();
+</script>
+</body>
+</html>
