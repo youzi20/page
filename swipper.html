@@ -5,6 +5,7 @@
     <title>swipper</title>
     <style>
         .swipper {
+            position: relative;
             width: 700px;
             height: 400px;
             background: #efefef;
@@ -17,13 +18,66 @@
             left: 0;
             display: flex;
             width: 9999999%;
-            transition: all .3s ease;
+            /*transition: all .3s ease;*/
         }
 
         .slider {
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .btn {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .btn span {
+            position: absolute;
+            top: 0;
+            font-size: 25px;
+            color: #666;
+            height: 70px;
+            width: 50px;
+            line-height: 70px;
+            text-align: center;
+            margin-top: -35px;
+            cursor: pointer;
+            background: rgba(102, 102, 102, .2);
+            transition: all .3s ease;
+        }
+
+        .btn span:hover {
+            background: rgba(102, 102, 102, .6);
+        }
+
+        .btn span.next {
+            right: 0;
+        }
+
+        .pagination {
+            position: absolute;
+            left: 0;
+            bottom: 10px;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .pagination span {
+            width: 8px;
+            height: 8px;
+            margin: 0 5px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .pagination span.active {
+            background: #00f;
         }
     </style>
 </head>
@@ -37,84 +91,209 @@
         <div class="slider">4</div>
         <div class="slider">5</div>
     </div>
-</div>
-
-<div class="swipper swipper2">
-    <div class="wrapper">
-        <div class="slider">1</div>
-        <div class="slider">2</div>
-        <div class="slider">3</div>
-        <div class="slider">4</div>
-        <div class="slider">5</div>
+    <div class="btn">
+        <span class="prev"><</span>
+        <span class="next">></span>
     </div>
 </div>
 
+<!--<div class="swipper swipper2">-->
+<!--    <div class="wrapper">-->
+<!--        <div class="slider">1</div>-->
+<!--        <div class="slider">2</div>-->
+<!--        <div class="slider">3</div>-->
+<!--        <div class="slider">4</div>-->
+<!--        <div class="slider">5</div>-->
+<!--    </div>-->
+<!--</div>-->
+
 <script>
     (() => {
-        let Swipper = function ({el, delay}) {
+        // 说一下为什么有的变量有下划线有的没有
+        // 这个是个人习惯  _表示变量  没有的表示方法
+        let Swipper = function ({el, pagination, delay}) {
             this._el = el;
+            this._prev = el.querySelector(".prev");
+            this._next = el.querySelector(".next");
+            this._slider = el.querySelectorAll(".slider");
+            this._wrapper = el.querySelector(".wrapper");
             this._width = el.offsetWidth;
             this._height = el.offsetHeight;
-            this._slider = el.querySelectorAll(".slider");
             this._size = this._slider.length;
             this._index = 0;
             this._timer = null;
+            this._animate = null;
+            this._isHover = false;
+            this._pagination = pagination || false;
             this._delay = delay || 3000;
-
             this.init();
         };
 
         Swipper.prototype.init = function () {
-            this.setStyle();
+            this.style();
             this.auto();
             this.mouseEnter();
         };
 
-        Swipper.prototype.setStyle = function () {
+        Swipper.prototype.style = function () {
             this._slider.forEach(item => {
                 item.style.width = this._width + "px";
                 item.style.height = this._height + "px";
             });
+
+            // 无限轮播  复制第一页放在最后  复制最后一页 放在第一  5123451
+            // 克隆完就要重新校验位置了  因为之前是 0 现在 1 才是真正要展示的
+            const firstDom = this._slider[0].cloneNode(true);
+            const lastDom = this._slider[this._size - 1].cloneNode(true);
+
+            this._wrapper.appendChild(firstDom);
+            this._wrapper.insertBefore(lastDom, this._el.querySelector(".slider"));
+            this._wrapper.style.left = -this._width + "px"; // 归位到第一张
+
+
+            if (this._pagination) {
+                const pagination = document.createElement("div");
+                pagination.className = "pagination";
+
+                this._slider.forEach((item, i) => {
+                    const span = document.createElement("span");
+                    if (i === this._index) span.className = "active";
+
+                    span.onclick = function () {
+                        this.index(i);
+                    }.bind(this)
+                    pagination.appendChild(span);
+                });
+
+                this._el.appendChild(pagination);
+            }
         };
+
+        Swipper.prototype.active = function () {
+            this._el.querySelector(`.pagination span.active`).className = "";
+
+            const index = this._index < 0 ? this._size : this._index >= this._size ? 1 : this._index + 1;
+            this._el.querySelector(`.pagination span:nth-child(${index})`).className = "active";
+        };
+
+        Swipper.prototype.prev = function () {
+            this._index--;
+            this.move();
+        }
 
         Swipper.prototype.next = function () {
             this._index++;
+            this.move();
+        };
 
-            if (this._index >= this._size) this._index = 0;
-
+        Swipper.prototype.index = function (index) {
+            this._index = index;
             this.move();
         };
 
         Swipper.prototype.move = function () {
-            this._el.querySelector(".wrapper").style.left = -this._index * this._width + "px";
+            // 这里就是处理循环轮播的重点了
+            // 复位操作：当处于拼接的 dom 的时候  归位到原本 dom 例如： 5123451  最后的1就是假的1  要复位到 真的1元素上
+            // next 最后一页 切到第一页 ，这个时候注意  因为之前复制了第一页放在最后面了  所以继续往下滚动就好了 ，也不用做复位操作
+
+
+            // 当在第 5 页的时候 下一页就是 1 要判断一下  index 是不是大于 5 ，为什么不像之前大于或等于5，因为index = 5的时候会处于假 1 上
+            // 当index > 5 的时候 已经超过最大值了  得回到最开始了。但是，  因为补了一个假 1  所以  6 已经到第2个了 所以 index = 1；
+            // 页面也必需换到真 1
+            if (this._index > this._size) {
+                this._index = 1;
+                this.styleLeft(-1 * this._width);
+            }
+            // if (this._index >= this._size) this._index = 0; // 无须拼接
+
+            // 反之也要改成 -1 因为前面也有一个假5
+            if (this._index < -1) {
+                this._index = this._size - 2;
+                this.styleLeft(-(this._size) * this._width);
+            }
+            // if (this._index < 0) this._index = this._size - 1; // 无须拼接
+
+            this.start((-this._index - 1) * this._width); // index 也要 -1 因为前面存在一页假 dom
+            this.active();
             this.auto();
-        }
+        };
+
+        Swipper.prototype.start = function (end) {
+            const start = parseFloat(this._wrapper.style.left);
+
+            this.animate(start, end);
+        };
+
+        Swipper.prototype.animate = function (start, end) {
+            // 这里有一点要注意，滚动的方向是向前还是向后
+            // start - end > 0 说明下一页 所以是 -
+            const step = (start - end > 0 ? -1 : 1) * (Math.abs(start - end) / 10); // 设置一个滚动基数
+
+            if (this._animate) clearInterval(this._animate);
+
+            this._animate = setInterval(() => {
+                start += step;
+
+                if (step < 0 && end - start > step || step > 0 && end - start < step) {
+                    clearInterval(this._animate);
+                    this.styleLeft(end);
+                } else {
+                    this.styleLeft(start);
+                }
+            }, 40)
+        };
 
         Swipper.prototype.auto = function () {
             if (this._timer) clearTimeout(this._timer);
+            if (this._isHover) {
+                clearTimeout(this._timer);
+                return;
+            }
+
             this._timer = setTimeout(() => {
+                if (this._isHover) {
+                    clearTimeout(this._timer);
+                    return;
+                }
                 this.next();
             }, this._delay)
         };
 
+        Swipper.prototype.styleLeft = function (left) {
+            this._wrapper.style.left = left + "px";
+        };
+
         Swipper.prototype.mouseEnter = function () {
             this._el.onmouseenter = () => {
-                clearTimeout(this._timer);
+                this._isHover = true;
             };
 
-            this._el.onmouseout = () => {
-                this.auto();
+            this._el.onmouseleave = () => {
+                this._isHover = false;
             };
+
+            if (this._prev) {
+                this._prev.onclick = () => {
+                    this.prev();
+                }
+            }
+
+            if (this._next) {
+                this._next.onclick = () => {
+                    this.next();
+                }
+            }
         };
 
         new Swipper({
             el: document.querySelector(".swipper1"),
-            delay: 5000
+            pagination: true,
+            delay: 2000
         });
 
-        new Swipper({
-            el: document.querySelector(".swipper2"),
-        });
+        // new Swipper({
+        //     el: document.querySelector(".swipper2"),
+        // });
     })();
 </script>
 <script>
