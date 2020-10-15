@@ -296,29 +296,5 @@
         // });
     })();
 </script>
-<script>
-    // 闭包：
-    // 作用：防止变量污染
-
-    (() => {
-        // a 方法  ---  a 就是一个闭包
-        const a = (() => {
-            const name = "小明";
-            const age = "18";
-
-            const getName = () => name;
-            const getAge = () => age;
-
-            return {getName, getAge};
-        })();
-
-        // b 方法
-        const b = () => {
-            console.log(a.getName());
-        };
-
-        b();
-    })();
-</script>
 </body>
 </html>
