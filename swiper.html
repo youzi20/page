@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>swipper</title>
+    <title>swiper</title>
     <style>
-        .swipper {
+        .swiper {
             position: relative;
             width: 700px;
             height: 400px;
@@ -83,7 +83,7 @@
 </head>
 <body>
 
-<div class="swipper swipper1">
+<div class="swiper swiper1">
     <div class="wrapper">
         <div class="slider">1</div>
         <div class="slider">2</div>
@@ -97,7 +97,7 @@
     </div>
 </div>
 
-<!--<div class="swipper swipper2">-->
+<!--<div class="swiper swiper2">-->
 <!--    <div class="wrapper">-->
 <!--        <div class="slider">1</div>-->
 <!--        <div class="slider">2</div>-->
@@ -111,7 +111,7 @@
     (() => {
         // 说一下为什么有的变量有下划线有的没有
         // 这个是个人习惯  _表示变量  没有的表示方法
-        let Swipper = function ({el, pagination, delay}) {
+        let Swiper = function ({el, pagination, delay}) {
             this._el = el;
             this._prev = el.querySelector(".prev");
             this._next = el.querySelector(".next");
@@ -129,13 +129,13 @@
             this.init();
         };
 
-        Swipper.prototype.init = function () {
+        Swiper.prototype.init = function () {
             this.style();
             this.auto();
             this.mouseEnter();
         };
 
-        Swipper.prototype.style = function () {
+        Swiper.prototype.style = function () {
             this._slider.forEach(item => {
                 item.style.width = this._width + "px";
                 item.style.height = this._height + "px";
@@ -169,29 +169,29 @@
             }
         };
 
-        Swipper.prototype.active = function () {
+        Swiper.prototype.active = function () {
             this._el.querySelector(`.pagination span.active`).className = "";
 
             const index = this._index < 0 ? this._size : this._index >= this._size ? 1 : this._index + 1;
             this._el.querySelector(`.pagination span:nth-child(${index})`).className = "active";
         };
 
-        Swipper.prototype.prev = function () {
+        Swiper.prototype.prev = function () {
             this._index--;
             this.move();
         }
 
-        Swipper.prototype.next = function () {
+        Swiper.prototype.next = function () {
             this._index++;
             this.move();
         };
 
-        Swipper.prototype.index = function (index) {
+        Swiper.prototype.index = function (index) {
             this._index = index;
             this.move();
         };
 
-        Swipper.prototype.move = function () {
+        Swiper.prototype.move = function () {
             // 这里就是处理循环轮播的重点了
             // 复位操作：当处于拼接的 dom 的时候  归位到原本 dom 例如： 5123451  最后的1就是假的1  要复位到 真的1元素上
             // next 最后一页 切到第一页 ，这个时候注意  因为之前复制了第一页放在最后面了  所以继续往下滚动就好了 ，也不用做复位操作
@@ -218,13 +218,13 @@
             this.auto();
         };
 
-        Swipper.prototype.start = function (end) {
+        Swiper.prototype.start = function (end) {
             const start = parseFloat(this._wrapper.style.left);
 
             this.animate(start, end);
         };
 
-        Swipper.prototype.animate = function (start, end) {
+        Swiper.prototype.animate = function (start, end) {
             // 这里有一点要注意，滚动的方向是向前还是向后
             // start - end > 0 说明下一页 所以是 -
             const step = (start - end > 0 ? -1 : 1) * (Math.abs(start - end) / 10); // 设置一个滚动基数
@@ -243,7 +243,7 @@
             }, 40)
         };
 
-        Swipper.prototype.auto = function () {
+        Swiper.prototype.auto = function () {
             if (this._timer) clearTimeout(this._timer);
             if (this._isHover) {
                 clearTimeout(this._timer);
@@ -259,11 +259,11 @@
             }, this._delay)
         };
 
-        Swipper.prototype.styleLeft = function (left) {
+        Swiper.prototype.styleLeft = function (left) {
             this._wrapper.style.left = left + "px";
         };
 
-        Swipper.prototype.mouseEnter = function () {
+        Swiper.prototype.mouseEnter = function () {
             this._el.onmouseenter = () => {
                 this._isHover = true;
             };
@@ -285,14 +285,14 @@
             }
         };
 
-        new Swipper({
-            el: document.querySelector(".swipper1"),
+        new Swiper({
+            el: document.querySelector(".swiper1"),
             pagination: true,
             delay: 2000
         });
 
-        // new Swipper({
-        //     el: document.querySelector(".swipper2"),
+        // new Swiper({
+        //     el: document.querySelector(".swiper2"),
         // });
     })();
 </script>
