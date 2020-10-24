@@ -245,14 +245,11 @@
 
         Swiper.prototype.auto = function () {
             if (this._timer) clearTimeout(this._timer);
-            if (this._isHover) {
-                clearTimeout(this._timer);
-                return;
-            }
 
             this._timer = setTimeout(() => {
                 if (this._isHover) {
                     clearTimeout(this._timer);
+                    this.auto();
                     return;
                 }
                 this.next();
