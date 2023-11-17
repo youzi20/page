@@ -60,43 +60,44 @@
     }
 
     function drawImage(canvas, context, logo, text) {
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      return new Promise((resolve, reject) => {
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 创建 Image 对象
-      var image = new Image();
+        // 图片加载完成后执行绘制
+        image.onload = function () {
+          // 将图片绘制到 Canvas 上
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-      // 图片加载完成后执行绘制
-      image.onload = function () {
-        // 将图片绘制到 Canvas 上
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          var avatarImage = new Image();
 
-        var avatarImage = new Image();
+          avatarImage.onload = function () {
+            var x = 1453.5;
+            var y = 1482.5;
+            var diameter = 1491;
 
-        avatarImage.onload = function () {
-          var x = 1453.5;
-          var y = 1482.5;
-          var diameter = 1491;
+            context.save();
+            context.beginPath();
+            context.arc(x, y, diameter / 2, 0, 2 * Math.PI);
+            context.closePath();
+            context.clip();
 
-          context.save();
-          context.beginPath();
-          context.arc(x, y, diameter / 2, 0, 2 * Math.PI);
-          context.closePath();
-          context.clip();
+            context.drawImage(avatarImage, x - diameter / 2, y - diameter / 2, diameter, diameter);
 
-          context.drawImage(avatarImage, x - diameter / 2, y - diameter / 2, diameter, diameter);
+            context.restore();
 
-          context.restore();
+            drawText(context, text);
+            download(canvas, text);
 
-          drawText(context, text);
-          download(canvas, text);
-        }
+            resolve(true);
+          }
 
-        // 设置头像图片源路径
-        avatarImage.src = logo;
-      };
-
-      // 设置图片源路径
-      image.src = "./bg.jpg"; // 替换为你自己的图片路径
+          avatarImage.onerror = function () {
+            reject(false);
+          }
+          // 设置头像图片源路径
+          avatarImage.src = logo;
+        };
+      })
     }
 
     function download(canvas, text) {
@@ -124,6 +125,11 @@
       const imageContainer = document.getElementById("imageContainer");
       const startBtn = document.getElementById("startBtn");
 
+      // 创建 Image 对象
+      const image = new Image();
+      // 设置图片源路径
+      image.src = "./bg.jpg";
+
       let files = [];
 
       input.addEventListener("change", function () {
@@ -143,11 +149,13 @@
         const list = imageContainer.querySelectorAll("div");
         let i = 0;
 
-        function start(root) {
+        async function start(root) {
           const img = root.querySelector("img");
           const input = root.querySelector("input");
 
-          drawImage(canvas, context, img.src, input.value);
+          await drawImage(canvas, context, img.src, input.value);
+
+          autoStart();
         }
 
         function autoStart() {
