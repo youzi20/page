@@ -59,44 +59,40 @@
       context.fillText(text, rectX + rectWidth / 2, rectY + rectHeight / 2);
     }
 
-    function drawImage(canvas, context, logo, text) {
+    function drawImage(canvas, context, image, logo, text) {
       return new Promise((resolve, reject) => {
         context.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 图片加载完成后执行绘制
-        image.onload = function () {
-          // 将图片绘制到 Canvas 上
+        var avatarImage = new Image();
+
+        avatarImage.onload = function () {
           context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-          var avatarImage = new Image();
+          var x = 1453.5;
+          var y = 1482.5;
+          var diameter = 1491;
 
-          avatarImage.onload = function () {
-            var x = 1453.5;
-            var y = 1482.5;
-            var diameter = 1491;
+          context.save();
+          context.beginPath();
+          context.arc(x, y, diameter / 2, 0, 2 * Math.PI);
+          context.closePath();
+          context.clip();
 
-            context.save();
-            context.beginPath();
-            context.arc(x, y, diameter / 2, 0, 2 * Math.PI);
-            context.closePath();
-            context.clip();
+          context.drawImage(avatarImage, x - diameter / 2, y - diameter / 2, diameter, diameter);
 
-            context.drawImage(avatarImage, x - diameter / 2, y - diameter / 2, diameter, diameter);
+          context.restore();
 
-            context.restore();
+          drawText(context, text);
+          download(canvas, text);
 
-            drawText(context, text);
-            download(canvas, text);
+          resolve(true);
+        }
 
-            resolve(true);
-          }
-
-          avatarImage.onerror = function () {
-            reject(false);
-          }
-          // 设置头像图片源路径
-          avatarImage.src = logo;
-        };
+        avatarImage.onerror = function () {
+          reject(false);
+        }
+        // 设置头像图片源路径
+        avatarImage.src = logo;
       })
     }
 
@@ -138,7 +134,7 @@
 
           imageContainer.innerHTML = files.map(item => {
             return `<div>
-              <img src="${URL.createObjectURL(item)}" />
+              <img src="${URL.createObjectURL(item)}" style="width: 400px" />
               <input type="text" />
               </div>`
           }).join("");
@@ -153,7 +149,7 @@
           const img = root.querySelector("img");
           const input = root.querySelector("input");
 
-          await drawImage(canvas, context, img.src, input.value);
+          await drawImage(canvas, context, image, img.src, input.value);
 
           autoStart();
         }
