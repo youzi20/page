@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Static Template</title>
+  <style>
+    div {
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      background: #efefef;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="myCanvas" width="5413" height="3045"></canvas>
+
+  <div>
+    <input id="myInput" type="file" multiple>
+  </div>
+
+  <div id="imageContainer"></div>
+  <button id="startBtn">start</button>
+  <script>
+    function drawText(context, text) {
+      // 绘制圆角矩形
+      var centerX = 1453.5; // 矩形中心的 x 坐标
+      var centerY = 2265.5; // 矩形中心的 y 坐标
+      var rectWidth = 1081; // 矩形的宽度
+      var rectHeight = 163; // 矩形的高度
+      var cornerRadius = 81; // 圆角的半径
+
+      var rectX = centerX - rectWidth / 2; // 矩形的左上角 x 坐标
+      var rectY = centerY - rectHeight / 2; // 矩形的左上角 y 坐标
+
+      context.beginPath();
+      context.moveTo(rectX + cornerRadius, rectY);
+      context.lineTo(rectX + rectWidth - cornerRadius, rectY);
+      context.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + cornerRadius);
+      context.lineTo(rectX + rectWidth, rectY + rectHeight - cornerRadius);
+      context.quadraticCurveTo(rectX + rectWidth, rectY + rectHeight, rectX + rectWidth - cornerRadius, rectY + rectHeight);
+      context.lineTo(rectX + cornerRadius, rectY + rectHeight);
+      context.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - cornerRadius);
+      context.lineTo(rectX, rectY + cornerRadius);
+      context.quadraticCurveTo(rectX, rectY, rectX + cornerRadius, rectY);
+      context.closePath();
+      context.fillStyle = "#2c2c61";
+      context.fill();
+
+      // 绘制文字
+      context.font = "bold 100px 'PingFang SC'";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillStyle = "#fff";
+      context.fillText(text, rectX + rectWidth / 2, rectY + rectHeight / 2);
+    }
+
+    function drawImage(canvas, context, logo, text) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 创建 Image 对象
+      var image = new Image();
+
+      // 图片加载完成后执行绘制
+      image.onload = function () {
+        // 将图片绘制到 Canvas 上
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        var avatarImage = new Image();
+
+        avatarImage.onload = function () {
+          var x = 1453.5;
+          var y = 1482.5;
+          var diameter = 1491;
+
+          context.save();
+          context.beginPath();
+          context.arc(x, y, diameter / 2, 0, 2 * Math.PI);
+          context.closePath();
+          context.clip();
+
+          context.drawImage(avatarImage, x - diameter / 2, y - diameter / 2, diameter, diameter);
+
+          context.restore();
+
+          drawText(context, text);
+          download(canvas, text);
+        }
+
+        // 设置头像图片源路径
+        avatarImage.src = logo;
+      };
+
+      // 设置图片源路径
+      image.src = "./bg.jpg"; // 替换为你自己的图片路径
+    }
+
+    function download(canvas, text) {
+      var dataURL = canvas.toDataURL("image/png");
+
+      // 创建一个链接元素并设置其属性
+      var link = document.createElement("a");
+      link.href = dataURL;
+      link.download = text + ".png";
+
+      // 模拟点击链接元素，触发下载操作
+      link.click();
+    }
+
+    window.onload = function () {
+      // 获取 Canvas 元素
+      var canvas = document.getElementById("myCanvas");
+      var context = canvas.getContext("2d");
+
+      canvas.style.width = canvas.width / 10 + "px";
+      canvas.style.height = canvas.height / 10 + "px";
+
+      const input = document.getElementById("myInput");
+
+      const imageContainer = document.getElementById("imageContainer");
+      const startBtn = document.getElementById("startBtn");
+
+      let files = [];
+
+      input.addEventListener("change", function () {
+        if (this.files && this.files.length > 0) {
+          files = [...this.files];
+
+          imageContainer.innerHTML = files.map(item => {
+            return `<div>
+              <img src="${URL.createObjectURL(item)}" />
+              <input type="text" />
+              </div>`
+          }).join("");
+        }
+      });
+
+      startBtn.onclick = function () {
+        const list = imageContainer.querySelectorAll("div");
+        let i = 0;
+
+        function start(root) {
+          const img = root.querySelector("img");
+          const input = root.querySelector("input");
+
+          drawImage(canvas, context, img.src, input.value);
+        }
+
+        function autoStart() {
+          if (i >= list.length) return;
+
+          setTimeout(() => {
+            start(list[i]);
+            i++;
+          }, 3000);
+        }
+
+        autoStart();
+      }
+    };
+  </script>
+</body>
+
+</html>
